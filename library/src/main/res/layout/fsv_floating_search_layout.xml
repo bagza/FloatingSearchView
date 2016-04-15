@@ -18,13 +18,18 @@
         android:layout_alignStart="@id/fsv.search.container"
         android:layout_alignLeft="@id/fsv.search.container">
 
-        <view class="com.mypopsy.widget.FloatingSearchView$RecyclerView"
+        <!--<view class="com.mypopsy.widget.FloatingSearchView$RecyclerView"
               android:id="@+id/fsv.suggestions.list"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:overScrollMode="never"
               app:layoutManager="LinearLayoutManager"
-            />
+            />-->
+        <View android:id="@+id/stub"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:visibility="invisible"
+              android:background="@android:color/holo_purple"/>
 
         <View android:id="@+id/fsv.suggestions.divider"
               android:layout_width="match_parent"

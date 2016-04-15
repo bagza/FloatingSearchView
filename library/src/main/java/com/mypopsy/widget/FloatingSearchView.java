@@ -107,9 +107,9 @@ public class FloatingSearchView extends RelativeLayout {
 
     final private LogoEditText mSearchInput;
     final private ImageView mNavButtonView;
-    final private RecyclerView mRecyclerView;
     final private ViewGroup mSearchContainer;
     final private View mDivider;
+    final private View stub;
     final private ActionMenuView mActionMenu;
 
     final private Activity mActivity;
@@ -144,8 +144,8 @@ public class FloatingSearchView extends RelativeLayout {
 
         mSearchInput = (LogoEditText)findViewById(R.id.fsv_search_text);
         mNavButtonView = (ImageView) findViewById(R.id.fsv_search_action_navigation);
-        mRecyclerView = (RecyclerView) findViewById(R.id.fsv_suggestions_list);
         mDivider = findViewById(R.id.fsv_suggestions_divider);
+        stub = findViewById(R.id.stub);
         mSearchContainer = (ViewGroup) findViewById(R.id.fsv_search_container);
         mActionMenu = (ActionMenuView) findViewById(R.id.fsv_search_action_menu);
 
@@ -229,10 +229,6 @@ public class FloatingSearchView extends RelativeLayout {
                 setTopPaddingByActionBarSize();
             }
         });
-
-        mRecyclerView.addItemDecoration(mCardDecorator);
-        mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.setVisibility(View.INVISIBLE);
 
         mBackgroundDrawable = getBackground();
 
@@ -389,21 +385,6 @@ public class FloatingSearchView extends RelativeLayout {
         mSearchInput.removeTextChangedListener(textWatcher);
     }
 
-    public void setAdapter(RecyclerView.Adapter<? extends RecyclerView.ViewHolder> adapter) {
-        RecyclerView.Adapter<? extends RecyclerView.ViewHolder> old = getAdapter();
-        if(old != null) old.unregisterAdapterDataObserver(mAdapterObserver);
-        adapter.registerAdapterDataObserver(mAdapterObserver);
-        mRecyclerView.setAdapter(adapter);
-    }
-
-    public void setItemAnimator(RecyclerView.ItemAnimator itemAnimator) {
-        mRecyclerView.setItemAnimator(itemAnimator);
-    }
-
-    public void addItemDecoration(RecyclerView.ItemDecoration decoration) {
-        mRecyclerView.addItemDecoration(decoration);
-    }
-
     public void setLogo(Drawable drawable) {
         mSearchInput.setLogo(drawable);
     }
@@ -433,12 +414,6 @@ public class FloatingSearchView extends RelativeLayout {
     public Drawable getIcon() {
         if(mNavButtonView == null) return null;
         return mNavButtonView.getDrawable();
-    }
-
-    @SuppressWarnings("unchecked")
-    @Nullable
-    public RecyclerView.Adapter<? extends RecyclerView.ViewHolder> getAdapter() {
-        return mRecyclerView.getAdapter();
     }
 
     protected LayoutTransition getDefaultLayoutTransition() {
@@ -475,14 +450,8 @@ public class FloatingSearchView extends RelativeLayout {
         }
     }
 
-    private int getSuggestionsCount() {
-        RecyclerView.Adapter<? extends RecyclerView.ViewHolder> adapter = getAdapter();
-        if(adapter == null) return 0;
-        return adapter.getItemCount();
-    }
-
     private void updateSuggestionsVisibility() {
-        showSuggestions(isActivated() && getSuggestionsCount() > 0);
+        showSuggestions(isActivated());
     }
 
     private boolean suggestionsShown() {
@@ -494,7 +463,6 @@ public class FloatingSearchView extends RelativeLayout {
 
         mSuggestionsShown = show;
 
-        int childCount = mRecyclerView.getChildCount();
         int translation = 0;
 
         final Runnable endAction = new Runnable() {
@@ -504,33 +472,31 @@ public class FloatingSearchView extends RelativeLayout {
                     updateDivider();
                 else {
                     showDivider(false);
-                    mRecyclerView.setVisibility(View.INVISIBLE);
-                    mRecyclerView.setTranslationY(-mRecyclerView.getHeight());
+                    stub.setVisibility(View.INVISIBLE);
+                    stub.setTranslationY(-stub.getHeight());
                 }
             }
         };
 
         if(show) {
             updateDivider();
-            mRecyclerView.setVisibility(VISIBLE);
-            if(mRecyclerView.getTranslationY() == 0)
-                mRecyclerView.setTranslationY(-mRecyclerView.getHeight());
-        }else if(childCount > 0)
-            translation = -mRecyclerView.getChildAt(childCount - 1).getBottom();
-        else
-            showDivider(false);
+            stub.setVisibility(VISIBLE);
+            if(stub.getTranslationY() == 0)
+                stub.setTranslationY(-stub.getHeight());
+        }
+        else {
+            translation = -stub.getHeight();
+        }
 
-        ViewPropertyAnimatorCompat listAnim = ViewCompat.animate(mRecyclerView)
+
+        ViewPropertyAnimatorCompat listAnim = ViewCompat.animate(stub)
                 .translationY(translation)
                 .setDuration(show ? DEFAULT_DURATION_ENTER : DEFAULT_DURATION_EXIT)
                 .setInterpolator(show ? DECELERATE : ACCELERATE)
                 .withLayer()
                 .withEndAction(endAction);
 
-        if(show || childCount > 0)
-            listAnim.start();
-        else
-            endAction.run();
+        listAnim.start();
     }
 
     private void showDivider(boolean visible) {
@@ -541,7 +507,7 @@ public class FloatingSearchView extends RelativeLayout {
     }
 
     private void updateDivider() {
-        showDivider(isActivated() && getSuggestionsCount() > 0);
+        showDivider(isActivated());
     }
 
     @NonNull

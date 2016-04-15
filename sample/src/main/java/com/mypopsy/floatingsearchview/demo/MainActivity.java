@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity implements
     private static final int REQ_CODE_SPEECH_INPUT = 42;
 
     private FloatingSearchView mSearchView;
-    private SearchAdapter mAdapter;
+    //private SearchAdapter mAdapter;
 
     @Inject
     SearchController mSearch;
@@ -65,9 +65,7 @@ public class MainActivity extends AppCompatActivity implements
         mSearch.setListener(this);
 
         mSearchView = (FloatingSearchView) findViewById(R.id.search);
-        mSearchView.setAdapter(mAdapter = new SearchAdapter());
         mSearchView.showLogo(true);
-        mSearchView.setItemAnimator(new CustomSuggestionItemAnimator(mSearchView));
 
         updateNavigationIcon(R.id.menu_icon_search);
 
@@ -208,11 +206,11 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onSearchResults(SearchResult ...searchResults) {
-        mAdapter.setNotifyOnChange(false);
+        /*mAdapter.setNotifyOnChange(false);
         mAdapter.clear();
         if (searchResults != null) mAdapter.addAll(searchResults);
         mAdapter.setNotifyOnChange(true);
-        mAdapter.notifyDataSetChanged();
+        mAdapter.notifyDataSetChanged();*/
         showProgressBar(false);
     }
 
@@ -283,13 +281,13 @@ public class MainActivity extends AppCompatActivity implements
             text = (TextView) itemView.findViewById(R.id.text);
             url = (TextView) itemView.findViewById(R.id.url);
             left.setImageResource(R.drawable.ic_google);
-            itemView.findViewById(R.id.text_container)
+            /*itemView.findViewById(R.id.text_container)
                     .setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     onItemClick(mAdapter.getItem(getAdapterPosition()));
                 }
-            });
+            });*/
             right.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
