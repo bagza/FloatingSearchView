@@ -223,6 +223,12 @@ public class FloatingSearchView extends RelativeLayout {
         mSearchContainer.setBackgroundDrawable(mSearchBackground);
         mSearchContainer.setMinimumHeight((int) mSearchBackground.getMinHeight());
         mSearchContainer.setMinimumWidth((int) mSearchBackground.getMinWidth());
+        mSearchContainer.post(new Runnable() {
+            @Override
+            public void run() {
+                setTopPaddingByActionBarSize();
+            }
+        });
 
         mRecyclerView.addItemDecoration(mCardDecorator);
         mRecyclerView.setHasFixedSize(true);
@@ -269,6 +275,16 @@ public class FloatingSearchView extends RelativeLayout {
                 return true;
             }
         });
+    }
+
+    private void setTopPaddingByActionBarSize(){
+        int searchContainerHeight = mSearchContainer.getHeight();
+        int actionBarSize = ViewUtils.getActionBarSize(getContext());
+        int topPadding = (actionBarSize - searchContainerHeight) / 2;
+
+        MarginLayoutParams layoutParams = (MarginLayoutParams) mSearchContainer.getLayoutParams();
+        layoutParams.topMargin = topPadding;
+        mSearchContainer.setLayoutParams(layoutParams);
     }
 
     public void setRadius(float radius) {

@@ -25,6 +25,7 @@ import android.support.annotation.AttrRes;
 import android.support.annotation.ColorInt;
 import android.support.v4.graphics.drawable.DrawableCompat;
 import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -75,5 +76,20 @@ public class ViewUtils {
         icon = DrawableCompat.wrap(icon);
         DrawableCompat.setTint(icon, color);
         return icon;
+    }
+
+    private static int getAttrDimensionValue(Context context, @AttrRes int attr){
+        TypedValue tv = new TypedValue();
+        if (context.getTheme().resolveAttribute(attr, tv, true))
+        {
+            return TypedValue.complexToDimensionPixelSize(tv.data, context.getResources().getDisplayMetrics());
+        }
+        else {
+            return 0;
+        }
+    }
+
+    public static int getActionBarSize(Context context){
+        return getAttrDimensionValue(context, android.R.attr.actionBarSize);
     }
 }
