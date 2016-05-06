@@ -17,7 +17,6 @@ import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.MenuRes;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.annotation.StyleRes;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v4.graphics.drawable.DrawableCompat;
@@ -75,24 +74,6 @@ public class FloatingSearchView extends RelativeLayout {
     private static final Interpolator DECELERATE = new DecelerateInterpolator(3f);
     private static final Interpolator ACCELERATE = new AccelerateInterpolator(2f);
 
-    private RecyclerView.AdapterDataObserver mAdapterObserver = new android.support.v7.widget.RecyclerView.AdapterDataObserver() {
-
-        @Override
-        public void onItemRangeInserted(int positionStart, int itemCount) {
-            onChanged();
-        }
-
-        @Override
-        public void onItemRangeRemoved(int positionStart, int itemCount) {
-            onChanged();
-        }
-
-        @Override
-        public void onChanged() {
-            updateSuggestionsVisibility();
-        }
-    };
-
     public interface OnSearchListener {
         void onSearchAction(CharSequence text);
     }
@@ -109,7 +90,7 @@ public class FloatingSearchView extends RelativeLayout {
     final private ImageView mNavButtonView;
     final private ViewGroup mSearchContainer;
     final private View mDivider;
-    final private View stub;
+    final private ViewGroup suggestionsViewContainer;
     final private ActionMenuView mActionMenu;
 
     final private Activity mActivity;
@@ -122,6 +103,7 @@ public class FloatingSearchView extends RelativeLayout {
     private OnSearchFocusChangedListener mFocusListener;
     private OnIconClickListener mNavigationClickListener;
     private Drawable mBackgroundDrawable;
+    private boolean isReadyToShowSuggestions = false;
     private boolean mSuggestionsShown;
 
     public FloatingSearchView(Context context) {
@@ -145,7 +127,7 @@ public class FloatingSearchView extends RelativeLayout {
         mSearchInput = (LogoEditText)findViewById(R.id.fsv_search_text);
         mNavButtonView = (ImageView) findViewById(R.id.fsv_search_action_navigation);
         mDivider = findViewById(R.id.fsv_suggestions_divider);
-        stub = findViewById(R.id.stub);
+        suggestionsViewContainer = (ViewGroup) findViewById(R.id.fsv_suggestions_public_container);
         mSearchContainer = (ViewGroup) findViewById(R.id.fsv_search_container);
         mActionMenu = (ActionMenuView) findViewById(R.id.fsv_search_action_menu);
 
@@ -160,6 +142,10 @@ public class FloatingSearchView extends RelativeLayout {
 
         applyXmlAttributes(attrs, defStyleAttr, 0);
         setupViews();
+    }
+
+    public ViewGroup provideSuggestionsViewContainer(){
+        return suggestionsViewContainer;
     }
 
     private void applyXmlAttributes(AttributeSet attrs, @AttrRes int defStyleAttr, @StyleRes int defStyleRes) {
@@ -223,12 +209,6 @@ public class FloatingSearchView extends RelativeLayout {
         mSearchContainer.setBackgroundDrawable(mSearchBackground);
         mSearchContainer.setMinimumHeight((int) mSearchBackground.getMinHeight());
         mSearchContainer.setMinimumWidth((int) mSearchBackground.getMinWidth());
-        mSearchContainer.post(new Runnable() {
-            @Override
-            public void run() {
-                setTopPaddingByActionBarSize();
-            }
-        });
 
         mBackgroundDrawable = getBackground();
 
@@ -264,22 +244,27 @@ public class FloatingSearchView extends RelativeLayout {
             }
         });
 
+        //WHEN SEARCH TAPPED, JUST HIDE KEYBOARD.
         mSearchInput.setOnKeyListener(new OnKeyListener() {
             public boolean onKey(View view, int keyCode, KeyEvent keyEvent) {
                 if (keyCode != KeyEvent.KEYCODE_ENTER) return false;
-                setActivated(false);
+                ViewUtils.closeSoftKeyboard(mActivity);
                 return true;
             }
         });
     }
 
-    private void setTopPaddingByActionBarSize(){
-        int searchContainerHeight = mSearchContainer.getHeight();
-        int actionBarSize = ViewUtils.getActionBarSize(getContext());
-        int topPadding = (actionBarSize - searchContainerHeight) / 2;
+
+
+    public void setTopPaddingByActionBarSize(int actionBarSizePx){
+        final int TOP_PADDING_DP = 4;
+
+        int topPadding = ViewUtils.dpToPx(TOP_PADDING_DP);
+        int newSearchContainerHeight = actionBarSizePx - 2 * topPadding;
 
         MarginLayoutParams layoutParams = (MarginLayoutParams) mSearchContainer.getLayoutParams();
         layoutParams.topMargin = topPadding;
+        layoutParams.height = newSearchContainerHeight;
         mSearchContainer.setLayoutParams(layoutParams);
     }
 
@@ -357,6 +342,8 @@ public class FloatingSearchView extends RelativeLayout {
             mSearchInput.requestFocus();
             ViewUtils.showSoftKeyboardDelayed(mSearchInput, 100);
         }else {
+            //when we deactivate, we want to reset the old result state
+            setSuggestionsReady(false);
             requestFocus();
             ViewUtils.closeSoftKeyboard(mActivity);
         }
@@ -450,8 +437,13 @@ public class FloatingSearchView extends RelativeLayout {
         }
     }
 
+    public void setSuggestionsReady(boolean isReady){
+        isReadyToShowSuggestions = isReady;
+        updateSuggestionsVisibility();
+    }
+
     private void updateSuggestionsVisibility() {
-        showSuggestions(isActivated());
+        showSuggestions(isActivated() && isReadyToShowSuggestions);
     }
 
     private boolean suggestionsShown() {
@@ -472,31 +464,31 @@ public class FloatingSearchView extends RelativeLayout {
                     updateDivider();
                 else {
                     showDivider(false);
-                    stub.setVisibility(View.INVISIBLE);
-                    stub.setTranslationY(-stub.getHeight());
+                    suggestionsViewContainer.setVisibility(View.INVISIBLE);
+                    suggestionsViewContainer.setTranslationY(-suggestionsViewContainer.getHeight());
                 }
             }
         };
 
         if(show) {
             updateDivider();
-            stub.setVisibility(VISIBLE);
-            if(stub.getTranslationY() == 0)
-                stub.setTranslationY(-stub.getHeight());
+            suggestionsViewContainer.setVisibility(VISIBLE);
+            if(suggestionsViewContainer.getTranslationY() == 0)
+                suggestionsViewContainer.setTranslationY(-suggestionsViewContainer.getHeight());
         }
         else {
-            translation = -stub.getHeight();
+            translation = -suggestionsViewContainer.getHeight();
         }
 
 
-        ViewPropertyAnimatorCompat listAnim = ViewCompat.animate(stub)
+        ViewPropertyAnimatorCompat suggestionsAnimation = ViewCompat.animate(suggestionsViewContainer)
                 .translationY(translation)
                 .setDuration(show ? DEFAULT_DURATION_ENTER : DEFAULT_DURATION_EXIT)
                 .setInterpolator(show ? DECELERATE : ACCELERATE)
                 .withLayer()
                 .withEndAction(endAction);
 
-        listAnim.start();
+        suggestionsAnimation.start();
     }
 
     private void showDivider(boolean visible) {
@@ -665,10 +657,10 @@ public class FloatingSearchView extends RelativeLayout {
         @Override
         protected void onDraw(Canvas canvas) {
             if(logoShown && logo != null) {
-                if(dirty) {
+                //if(dirty) {
                     updateLogoBounds();
-                    dirty = false;
-                }
+                //    dirty = false;
+                //}
                 logo.draw(canvas);
             }else
                 super.onDraw(canvas);

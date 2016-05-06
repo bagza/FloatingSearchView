@@ -3,20 +3,24 @@
        xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <include layout="@layout/fsv_search_query_layout"
-             android:id="@+id/fsv.search.container"
+             android:id="@+id/fsv_search_container"
              android:layout_width="match_parent"
              android:layout_height="wrap_content"
              android:layout_centerHorizontal="true"
              android:transitionName="@string/fsv.transition.search.layout"
              tools:ignore="UnusedAttribute"/>
 
+    <!-- Hack left-right margins, because i don't understand where the search background sizes comes from. Overcomplicated there-->
     <FrameLayout
         android:id="@+id/fsv.suggestions.container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/fsv.search.container"
-        android:layout_alignStart="@id/fsv.search.container"
-        android:layout_alignLeft="@id/fsv.search.container">
+        android:layout_below="@id/fsv_search_container"
+        android:layout_alignStart="@id/fsv_search_container"
+        android:layout_alignLeft="@id/fsv_search_container"
+        android:layout_marginLeft="2dp"
+        android:layout_marginRight="2dp"
+        >
 
         <!--<view class="com.mypopsy.widget.FloatingSearchView$RecyclerView"
               android:id="@+id/fsv.suggestions.list"
@@ -25,11 +29,10 @@
               android:overScrollMode="never"
               app:layoutManager="LinearLayoutManager"
             />-->
-        <View android:id="@+id/stub"
+        <FrameLayout android:id="@+id/fsv_suggestions_public_container"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
-              android:visibility="invisible"
-              android:background="@android:color/holo_purple"/>
+              android:visibility="invisible"/>
 
         <View android:id="@+id/fsv.suggestions.divider"
               android:layout_width="match_parent"
